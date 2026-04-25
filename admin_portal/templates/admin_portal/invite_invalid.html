@@ -1,0 +1,17 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Invite Invalid · {{ APP_NAME }}</title>
+  <link rel="stylesheet" href="{% static 'admin_portal/styles.css' %}">
+</head>
+<body>
+  <div class="login-wrap card">
+    <h2>Invite Unavailable</h2>
+    <p class="muted">This invite is expired, revoked, or already used.</p>
+    <a href="{% url 'admin_portal:login' %}">Go to login</a>
+  </div>
+</body>
+</html>

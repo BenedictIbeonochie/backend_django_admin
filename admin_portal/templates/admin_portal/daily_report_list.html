@@ -1,0 +1,22 @@
+{% extends 'admin_portal/base.html' %}
+{% block title %}Daily Reports · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Daily AI Reports</h1>
+  {% if IS_SUPER_ADMIN %}
+  <form method="post" action="{% url 'admin_portal:daily_report_run_now' %}">{% csrf_token %}<button>Generate report now</button></form>
+  {% endif %}
+</div>
+<div class="card">
+<table class="table">
+  <tr><th>Date</th><th>Approved</th><th>Rejected</th><th>Flagged</th><th>Pending</th><th>Delivery</th><th></th></tr>
+  {% for r in page.object_list %}
+  <tr>
+    <td>{{ r.report_date }}</td><td>{{ r.approved_count }}</td><td>{{ r.rejected_count }}</td><td>{{ r.flagged_count }}</td><td>{{ r.pending_count }}</td>
+    <td>Email: {{ r.delivered_email|yesno:'yes,no' }} · Slack: {{ r.delivered_slack|yesno:'yes,no' }}</td>
+    <td><a href="{% url 'admin_portal:daily_report_detail' r.id %}">Open</a></td>
+  </tr>
+  {% empty %}<tr><td colspan="7" class="muted">No reports.</td></tr>{% endfor %}
+</table>
+</div>
+{% endblock %}

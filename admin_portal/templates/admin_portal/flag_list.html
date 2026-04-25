@@ -1,0 +1,29 @@
+{% extends 'admin_portal/base.html' %}
+{% block title %}Flags · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1>AI Flags</h1>
+<form method="get" class="inline card">
+  <select name="severity">
+    <option value="">All severity</option>
+    <option value="info" {% if severity == 'info' %}selected{% endif %}>info</option>
+    <option value="warning" {% if severity == 'warning' %}selected{% endif %}>warning</option>
+    <option value="critical" {% if severity == 'critical' %}selected{% endif %}>critical</option>
+  </select>
+  <label><input type="checkbox" name="resolved" value="1" {% if show_resolved %}checked{% endif %}> include resolved</label>
+  <button type="submit">Filter</button>
+</form>
+<div class="card">
+<table class="table">
+  <tr><th>Created</th><th>Severity</th><th>Review</th><th>Reason</th><th>Status</th></tr>
+  {% for f in page.object_list %}
+  <tr>
+    <td>{{ f.created_at|date:'Y-m-d H:i' }}</td>
+    <td><span class="badge {{ f.severity }}">{{ f.severity }}</span></td>
+    <td><a href="{% url 'admin_portal:review_detail' f.review.id %}">{{ f.review.subject_type }} · {{ f.review.subject_display_name|default:f.review.subject_user_email }}</a></td>
+    <td><a href="{% url 'admin_portal:flag_detail' f.id %}">{{ f.reason|truncatechars:120 }}</a></td>
+    <td>{% if f.resolved %}<span class="badge ok">resolved</span>{% else %}<span class="badge warn">open</span>{% endif %}</td>
+  </tr>
+  {% empty %}<tr><td colspan="5" class="muted">No flags.</td></tr>{% endfor %}
+</table>
+</div>
+{% endblock %}

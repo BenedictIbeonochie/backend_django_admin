@@ -1,0 +1,70 @@
+{% extends 'admin_portal/base.html' %}
+{% block title %}Dashboard · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>AI Account Governance Dashboard</h1>
+    <p class="muted">Automated approval/rejection for breeder and consultant onboarding.</p>
+  </div>
+  {% if IS_SUPER_ADMIN %}
+  <form method="post" action="{% url 'admin_portal:process_now' %}">{% csrf_token %}<button class="primary">Run Review Scan Now</button></form>
+  {% endif %}
+</div>
+
+<div class="card">
+  <strong>LLM key status:</strong>
+  {% if ai_key_set %}<span class="badge ok">Configured</span>{% else %}<span class="badge danger">Missing placeholder key</span>{% endif %}
+  <p class="muted">Set OPENAI_API_KEY in .env to enable GPT-based decisions.</p>
+</div>
+
+<div class="grid metrics">
+  <div class="card metric"><span class="muted">Total Reviews</span><strong>{{ counts.total }}</strong></div>
+  <div class="card metric"><span class="muted">Approved</span><strong>{{ counts.approved }}</strong></div>
+  <div class="card metric"><span class="muted">Rejected</span><strong>{{ counts.rejected }}</strong></div>
+  <div class="card metric"><span class="muted">Flagged</span><strong>{{ counts.flagged }}</strong></div>
+  <div class="card metric"><span class="muted">Pending</span><strong>{{ counts.pending }}</strong></div>
+</div>
+
+<div class="grid" style="grid-template-columns: 1.2fr 1fr;">
+  <div class="card">
+    <h3>Recent AI Reviews</h3>
+    <table class="table">
+      <tr><th>Time</th><th>Subject</th><th>Decision</th><th></th></tr>
+      {% for r in recent_reviews %}
+      <tr>
+        <td>{{ r.created_at|date:'Y-m-d H:i' }}</td>
+        <td>{{ r.subject_type }}<br><span class="muted">{{ r.subject_display_name|default:r.subject_user_email }}</span></td>
+        <td><span class="badge {{ r.badge_class }}">{{ r.decision }}</span></td>
+        <td><a href="{% url 'admin_portal:review_detail' r.id %}">Open</a></td>
+      </tr>
+      {% empty %}<tr><td colspan="4" class="muted">No reviews yet.</td></tr>{% endfor %}
+    </table>
+  </div>
+
+  <div>
+    <div class="card">
+      <h3>Open Flags</h3>
+      <table class="table">
+        <tr><th>Severity</th><th>Reason</th></tr>
+        {% for f in open_flags %}
+        <tr>
+          <td><span class="badge {{ f.severity }}">{{ f.severity }}</span></td>
+          <td><a href="{% url 'admin_portal:flag_detail' f.id %}">{{ f.reason|truncatechars:95 }}</a></td>
+        </tr>
+        {% empty %}<tr><td colspan="2" class="muted">No unresolved flags.</td></tr>{% endfor %}
+      </table>
+    </div>
+    <div class="card">
+      <h3>Last 7 Daily Reports</h3>
+      <table class="table">
+        {% for d in last_reports %}
+          <tr><td><a href="{% url 'admin_portal:daily_report_detail' d.id %}">{{ d.report_date }}</a></td><td>{{ d.total_reviewed }} reviewed</td></tr>
+        {% empty %}<tr><td class="muted">No reports generated.</td></tr>{% endfor %}
+      </table>
+      {% if IS_SUPER_ADMIN %}
+      <form method="post" action="{% url 'admin_portal:daily_report_run_now' %}">{% csrf_token %}<button>Generate Today Report</button></form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
