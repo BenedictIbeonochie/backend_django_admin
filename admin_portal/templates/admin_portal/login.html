@@ -1,0 +1,21 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login · {{ APP_NAME }}</title>
+  <link rel="stylesheet" href="{% static 'admin_portal/styles.css' %}">
+</head>
+<body>
+  <div class="login-wrap card">
+    <h2>{{ APP_NAME }}</h2>
+    <p class="muted">Sign in with your admin email and password.</p>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button class="primary" type="submit">Login</button>
+    </form>
+  </div>
+</body>
+</html>

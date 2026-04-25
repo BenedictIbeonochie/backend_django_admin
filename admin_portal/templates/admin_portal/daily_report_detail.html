@@ -1,0 +1,28 @@
+{% extends 'admin_portal/base.html' %}
+{% block title %}Report {{ report.report_date }} · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1>Daily Report — {{ report.report_date }}</h1>
+<div class="card">
+  <p>{{ report.summary }}</p>
+  <p>
+    Approved {{ report.approved_count }} · Rejected {{ report.rejected_count }} ·
+    Flagged {{ report.flagged_count }} · Pending {{ report.pending_count }}
+  </p>
+  <p>Breeders: {{ report.breeder_count }} · Consultants: {{ report.consultant_count }}</p>
+</div>
+<div class="card">
+  <h3>Reviewed Accounts</h3>
+  <table class="table">
+    <tr><th>Time</th><th>Role</th><th>Account</th><th>Decision</th><th></th></tr>
+    {% for r in reviews %}
+    <tr>
+      <td>{{ r.created_at|date:'Y-m-d H:i' }}</td>
+      <td>{{ r.subject_type }}</td>
+      <td>{{ r.subject_display_name|default:r.subject_user_email }}</td>
+      <td><span class="badge {{ r.badge_class }}">{{ r.decision }}</span></td>
+      <td><a href="{% url 'admin_portal:review_detail' r.id %}">Open</a></td>
+    </tr>
+    {% empty %}<tr><td colspan="5" class="muted">No records in this report.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

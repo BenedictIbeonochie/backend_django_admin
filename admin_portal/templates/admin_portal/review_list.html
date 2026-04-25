@@ -1,0 +1,43 @@
+{% extends 'admin_portal/base.html' %}
+{% block title %}AI Reviews · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1>AI Reviews</h1>
+<form method="get" class="inline card">
+  <input name="q" value="{{ q }}" placeholder="email / display name">
+  <select name="decision">
+    <option value="">All decisions</option>
+    <option value="approved" {% if decision == 'approved' %}selected{% endif %}>approved</option>
+    <option value="rejected" {% if decision == 'rejected' %}selected{% endif %}>rejected</option>
+    <option value="flagged" {% if decision == 'flagged' %}selected{% endif %}>flagged</option>
+    <option value="pending" {% if decision == 'pending' %}selected{% endif %}>pending</option>
+    <option value="error" {% if decision == 'error' %}selected{% endif %}>error</option>
+  </select>
+  <select name="subject">
+    <option value="">All roles</option>
+    <option value="breeder" {% if subject == 'breeder' %}selected{% endif %}>breeder</option>
+    <option value="consultant" {% if subject == 'consultant' %}selected{% endif %}>consultant</option>
+  </select>
+  <button type="submit">Filter</button>
+</form>
+
+<div class="card">
+<table class="table">
+  <tr><th>Created</th><th>Role</th><th>Account</th><th>Decision</th><th>Confidence</th><th></th></tr>
+  {% for r in page.object_list %}
+  <tr>
+    <td>{{ r.created_at|date:'Y-m-d H:i' }}</td>
+    <td>{{ r.subject_type }}</td>
+    <td>{{ r.subject_display_name|default:r.subject_user_email }}<br><span class="muted">{{ r.subject_user_email }}</span></td>
+    <td><span class="badge {{ r.badge_class }}">{{ r.decision }}</span></td>
+    <td>{{ r.confidence|floatformat:2 }}</td>
+    <td><a href="{% url 'admin_portal:review_detail' r.id %}">Details</a></td>
+  </tr>
+  {% empty %}<tr><td colspan="6" class="muted">No reviews.</td></tr>{% endfor %}
+</table>
+<div class="pager">
+  {% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&decision={{ decision }}&subject={{ subject }}&q={{ q }}">Previous</a>{% endif %}
+  <span>Page {{ page.number }} / {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}<a href="?page={{ page.next_page_number }}&decision={{ decision }}&subject={{ subject }}&q={{ q }}">Next</a>{% endif %}
+</div>
+</div>
+{% endblock %}

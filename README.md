@@ -46,3 +46,21 @@ See `.env.example` for the full list. The ones you must set:
 - `SLACK_BOT_TOKEN` and `SLACK_CHANNEL` — for AI issue alerts.
 - `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` — for email alerts.
 - `SUPERADMIN_EMAILS` — comma-separated list; defaults to `steven@humara.io,ben@humara.io`.
+
+## Migration / go-live plan from current admin
+
+1. Keep the legacy admin at `http://api.aquaai.uk/admin/` available during rollout.
+2. Deploy this project as a separate service (example URL: `https://admin-control.aquaai.uk/admin-portal/`).
+3. Point `DATABASE_URL` to the same production Postgres used by the main backend.
+4. Run:
+   - `python manage.py migrate`
+   - `python manage.py bootstrap_superadmins --password '<temporary-strong-password>'`
+5. Set production secrets:
+   - `OPENAI_API_KEY=<your key>`
+   - `SLACK_BOT_TOKEN=<bot token>` and `SLACK_CHANNEL=<channel>`
+   - SMTP settings (`EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, etc.)
+6. Add schedules:
+   - `python manage.py process_pending_reviews` every 5 minutes
+   - `python manage.py generate_daily_report` daily at `23:55 UTC`
+7. Validate with one breeder + one consultant test signup before enforcing full automation.
+8. After validation, instruct ops/developers to use only the new control-plane UI for approvals.

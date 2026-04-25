@@ -1,0 +1,51 @@
+{% extends 'admin_portal/base.html' %}
+{% block title %}Team Access · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1>Team Access Control</h1>
+<p class="muted">Only platform super-admins can invite or revoke admin access.</p>
+
+<div class="card">
+  <h3>Invite New Admin</h3>
+  <form method="post" action="{% url 'admin_portal:admin_user_invite' %}" class="inline">
+    {% csrf_token %}
+    {{ invite_form.email }}
+    {{ invite_form.full_name }}
+    <button class="primary" type="submit">Send Invite</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Current Admin Users</h3>
+  <table class="table">
+    <tr><th>Email</th><th>Name</th><th>Super Admin</th><th>Status</th><th></th></tr>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.email }}</td>
+      <td>{{ u.full_name|default:'-' }}</td>
+      <td>{{ u.is_super_admin|yesno:'yes,no' }}</td>
+      <td>{{ u.is_active|yesno:'active,inactive' }}</td>
+      <td>
+        {% if not u.is_super_admin and u.id != request.user.id %}
+        <form method="post" action="{% url 'admin_portal:admin_user_revoke' u.id %}">{% csrf_token %}<button class="danger">Revoke</button></form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h3>Pending Invites</h3>
+  <table class="table">
+    <tr><th>Email</th><th>Expires</th><th>Sent By</th><th></th></tr>
+    {% for i in invites %}
+    <tr>
+      <td>{{ i.email }}</td>
+      <td>{{ i.expires_at }}</td>
+      <td>{{ i.created_by.email }}</td>
+      <td><form method="post" action="{% url 'admin_portal:invite_cancel' i.id %}">{% csrf_token %}<button class="warn">Cancel</button></form></td>
+    </tr>
+    {% empty %}<tr><td colspan="4" class="muted">No pending invites.</td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

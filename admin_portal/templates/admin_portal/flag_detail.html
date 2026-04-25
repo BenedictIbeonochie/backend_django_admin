@@ -1,0 +1,32 @@
+{% extends 'admin_portal/base.html' %}
+{% block title %}Flag {{ flag.id }} · {{ APP_NAME }}{% endblock %}
+{% block content %}
+<h1>Flag Detail</h1>
+<div class="card kv">
+  <div class="muted">Severity</div><div><span class="badge {{ flag.severity }}">{{ flag.severity }}</span></div>
+  <div class="muted">Created</div><div>{{ flag.created_at }}</div>
+  <div class="muted">Review</div><div><a href="{% url 'admin_portal:review_detail' flag.review.id %}">{{ flag.review.id }}</a></div>
+  <div class="muted">Reason</div><div>{{ flag.reason }}</div>
+  <div class="muted">Recommended solution</div><div>{{ flag.recommended_solution|default:'-' }}</div>
+  <div class="muted">Applied solution</div><div>{{ flag.applied_solution|default:'-' }}</div>
+  <div class="muted">Notified emails</div><div>{{ flag.notified_emails|join:', '|default:'-' }}</div>
+  <div class="muted">Slack notified</div><div>{{ flag.notified_slack|yesno:'yes,no' }}</div>
+</div>
+
+{% if flag.resolved %}
+<div class="card">
+  <h3>Resolved</h3>
+  <p>By: {{ flag.resolved_by.email|default:'system' }} at {{ flag.resolved_at }}</p>
+  <p>{{ flag.resolution_notes }}</p>
+</div>
+{% else %}
+<div class="card">
+  <h3>Resolve this flag</h3>
+  <form method="post" action="{% url 'admin_portal:flag_resolve' flag.id %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="primary" type="submit">Mark Resolved</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}
