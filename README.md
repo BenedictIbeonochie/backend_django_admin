@@ -5,11 +5,39 @@ A separate Django project that replaces the ad-hoc `api.aquaai.uk/admin/` workfl
 This project **does not replace** the existing Django admin on the main API — the developer can keep using that. It adds a second, more controlled UI where:
 
 1. New breeder / consultant profiles are auto-reviewed by GPT‑4 and approved or rejected on verifiable grounds.
-2. When the AI flags an issue, **Steven@humara.io** and **Ben@humara.io** are notified via **email + Slack** with recommended remediations, which the AI also applies.
+2. When the AI flags an issue, **Steven@humara.io** and **Ben@humara.io** are notified via **email + Slack** (both emails are registered on Slack) along with the recommended solutions which the AI also applies.
 3. A daily analytics report summarises approvals / rejections with full drill-down into the AI's reasoning for every decision.
 4. Only **Steven@humara.io** and **Ben@humara.io** are super admins. They are the only users who can invite or remove other admin accounts.
+5. Super admins can **manually override** any AI decision with a documented reason — the override is applied to the external account and all stakeholders are notified.
 
 The legacy `/admin/` continues to work unchanged.
+
+## Key Features
+
+### AI-Powered Automated Review
+- GPT-4 analyses each new breeder/consultant signup across 5 dimensions: identity clarity, business legitimacy, documentation, role fit, and risk signals
+- Automatic approval (confidence ≥ 0.80), rejection (confidence ≤ 0.30), or flagging for human review
+- Every decision includes detailed rationale, evidence bullets, and dimension scores
+
+### Intelligent Notifications
+- Email + Slack alerts for every flagged issue, sent to super-admins
+- Daily summary reports delivered via both channels
+- Override notifications when a super-admin manually changes a decision
+
+### Manual Override System
+- Super-admins can override any AI decision (approve/reject) with documented reasoning
+- Overrides are applied immediately to the external account
+- Full audit trail of who overrode what and why
+
+### Team Access Control
+- Only Steven and Ben can invite/revoke admin accounts
+- Invite-based onboarding with email verification
+- Complete audit log of all actions
+
+### Analytics Dashboard
+- Real-time metrics: total, approved, rejected, flagged, pending, overrides
+- 7-day trend chart
+- Daily drill-down reports with per-account reasoning
 
 ## How it talks to the main backend
 

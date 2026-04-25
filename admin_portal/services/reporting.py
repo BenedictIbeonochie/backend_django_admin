@@ -31,6 +31,7 @@ def build_report_for(d: date | None = None) -> DailyReport:
         breeder=Count("id", filter=Q(subject_type="breeder")),
         consultant=Count("id", filter=Q(subject_type="consultant")),
     )
+    override_count = qs.filter(manually_overridden=True).count()
 
     summary_lines = []
     if by_decision["approved"]:
@@ -41,12 +42,20 @@ def build_report_for(d: date | None = None) -> DailyReport:
         summary_lines.append(f"{by_decision['flagged']} flagged for human review.")
     if by_decision["pending"]:
         summary_lines.append(f"{by_decision['pending']} still pending.")
+    if override_count:
+        summary_lines.append(f"{override_count} manually overridden by admins.")
     summary = " ".join(summary_lines) or "No new reviews today."
 
     details = {
         "decisions": list(qs.values("decision").annotate(n=Count("id"))),
         "subjects": list(qs.values("subject_type").annotate(n=Count("id"))),
         "review_ids": list(map(str, qs.values_list("id", flat=True))),
+        "overrides": list(
+            qs.filter(manually_overridden=True).values(
+                "id", "subject_display_name", "original_decision", "decision",
+                "override_reason"
+            )
+        ),
     }
 
     report, _ = DailyReport.objects.update_or_create(
@@ -58,6 +67,7 @@ def build_report_for(d: date | None = None) -> DailyReport:
             pending_count=by_decision["pending"] or 0,
             breeder_count=by_subject["breeder"] or 0,
             consultant_count=by_subject["consultant"] or 0,
+            manual_override_count=override_count,
             summary=summary,
             details=details,
         ),

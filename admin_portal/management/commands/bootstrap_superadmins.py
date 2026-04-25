@@ -1,11 +1,4 @@
-"""Idempotently create AdminUser rows for the platform super-admins.
-
-Reads SUPERADMIN_EMAILS from settings (defaults to steven@humara.io,ben@humara.io)
-and creates an active platform-super-admin AdminUser for each. If a user already
-exists, the platform-super-admin flag is enforced. Passwords can be supplied via
-the --password flag (applied to every newly created user) or env vars
-SUPERADMIN_PASSWORD_<EMAIL_LOCAL_PART> (e.g. SUPERADMIN_PASSWORD_STEVEN).
-"""
+"""Idempotently create AdminUser rows for the platform super-admins."""
 import os
 import secrets
 

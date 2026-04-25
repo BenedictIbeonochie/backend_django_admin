@@ -90,7 +90,6 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "admin_portal" / "static"]
 manifest_file = STATIC_ROOT / "staticfiles.json"
 if DEBUG or not manifest_file.exists():
-    # Local/dev should not require a collected static manifest.
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
 else:
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"

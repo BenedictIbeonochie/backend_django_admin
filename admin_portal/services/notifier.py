@@ -53,7 +53,8 @@ def notify_daily_report(report) -> dict:
         f"Approved : {report.approved_count}\n"
         f"Rejected : {report.rejected_count}\n"
         f"Flagged  : {report.flagged_count}\n"
-        f"Pending  : {report.pending_count}\n\n"
+        f"Pending  : {report.pending_count}\n"
+        f"Manual overrides: {report.manual_override_count}\n\n"
         f"Breeders   reviewed: {report.breeder_count}\n"
         f"Consultants reviewed: {report.consultant_count}\n\n"
         f"{report.summary}\n\n"
@@ -76,6 +77,54 @@ def notify_invite(invite, accept_url: str) -> dict:
         f"If you were not expecting this, ignore this email.\n"
     )
     return {"email": _send_email(subject, body, [invite.email])}
+
+
+def notify_manual_override(review, admin_user, new_decision, reason) -> dict:
+    """Notify super-admins when a review is manually overridden."""
+    subject = f"[Aqua Admin] Manual override on {review.subject_type} {review.subject_display_name or review.subject_user_email}"
+    body = (
+        f"A manual override was applied to a {review.subject_type} review.\n\n"
+        f"Subject: {review.subject_display_name or review.subject_user_email}\n"
+        f"Original decision: {review.original_decision}\n"
+        f"New decision: {new_decision}\n"
+        f"Overridden by: {admin_user.email}\n"
+        f"Reason: {reason}\n\n"
+        f"Open review: /admin-portal/reviews/{review.id}/\n"
+    )
+    delivered_email = _send_email(subject, body, _admin_emails())
+    delivered_slack = _send_slack(
+        f":warning: Manual override on `{review.subject_type}` "
+        f"_{review.subject_display_name or review.subject_user_email}_\n"
+        f"> {review.original_decision} → {new_decision} by {admin_user.email}\n"
+        f"_Reason:_ {reason}"
+    )
+    return {"email": delivered_email, "slack": delivered_slack}
+
+
+def notify_developer_action(developer_user, action: str, details: str) -> dict:
+    """Notify super-admins when a developer-role user makes a write action."""
+    subject = f"[Aqua Admin] Developer action by {developer_user.email}: {action}"
+    body = (
+        f"A developer-role admin has performed a write action.\n\n"
+        f"Developer: {developer_user.email} ({developer_user.full_name})\n"
+        f"Action: {action}\n"
+        f"Details: {details}\n\n"
+        f"Review this in the audit log: /admin-portal/audit/\n"
+    )
+    delivered_email = _send_email(subject, body, _admin_emails())
+    delivered_slack = _send_slack(
+        f":pencil2: Developer `{developer_user.email}` performed: *{action}*\n"
+        f"> {details}"
+    )
+    return {"email": delivered_email, "slack": delivered_slack}
+
+
+def notify_password_change(user) -> dict:
+    """Notify super-admins when any user changes their password."""
+    subject = f"[Aqua Admin] Password changed: {user.email}"
+    body = f"{user.email} has changed their control-plane password.\n"
+    delivered_email = _send_email(subject, body, _admin_emails())
+    return {"email": delivered_email}
 
 
 # ---------------------------------------------------------------------------

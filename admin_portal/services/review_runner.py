@@ -94,6 +94,10 @@ def run_review(subject_type: str, profile, user) -> AIAccountReview:
             ai_model=outcome.model,
             error=outcome.error,
             decided_at=timezone.now() if outcome.decision != "pending" else None,
+            manually_overridden=False,
+            overridden_by=None,
+            override_reason="",
+            original_decision="",
         ),
     )
 
@@ -116,6 +120,48 @@ def run_review(subject_type: str, profile, user) -> AIAccountReview:
         review.applied_actions = applied
         review.save(update_fields=["applied_actions"])
 
+    return review
+
+
+# ---------------------------------------------------------------------------
+# Manual override — super admin can force approve/reject
+# ---------------------------------------------------------------------------
+
+def manual_override(review: AIAccountReview, new_decision: str, reason: str, admin_user) -> AIAccountReview:
+    """Allow a super-admin to override an AI decision."""
+    from .notifier import notify_manual_override
+
+    review.original_decision = review.decision
+    review.decision = new_decision
+    review.manually_overridden = True
+    review.overridden_by = admin_user
+    review.override_reason = reason
+    review.decided_at = timezone.now()
+    review.save()
+
+    # Apply the override to the external profile
+    try:
+        if review.subject_type == "breeder":
+            profile = ExternalBreederProfile.objects.get(pk=review.subject_id)
+        else:
+            profile = ExternalConsultantProfile.objects.get(pk=review.subject_id)
+        user = ExternalUser.objects.get(pk=profile.user_id)
+
+        if new_decision == "approved":
+            _approve(review.subject_type, profile, user)
+            review.applied_actions = list(review.applied_actions or []) + [
+                {"action": "manual_approve", "by": admin_user.email}
+            ]
+        elif new_decision == "rejected":
+            _deactivate(review.subject_type, profile, user, reason=f"Manual reject: {reason}")
+            review.applied_actions = list(review.applied_actions or []) + [
+                {"action": "manual_reject", "by": admin_user.email}
+            ]
+        review.save(update_fields=["applied_actions"])
+    except Exception:
+        logger.exception("Failed applying manual override actions")
+
+    notify_manual_override(review, admin_user, new_decision, reason)
     return review
 
 

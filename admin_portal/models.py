@@ -17,6 +17,12 @@ from django.utils import timezone
 from .managers import AdminUserManager
 
 
+ROLE_CHOICES = [
+    ("super_admin", "Super Admin"),
+    ("developer", "Developer"),
+    ("guest", "Guest"),
+]
+
 SUBJECT_CHOICES = [("consultant", "Consultant"), ("breeder", "Breeder")]
 DECISION_CHOICES = [
     ("pending", "Pending"),
@@ -44,6 +50,16 @@ class AdminUser(AbstractBaseUser, PermissionsMixin):
             "ben@humara.io should ever have this flag set."
         ),
     )
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default="guest",
+        help_text=(
+            "guest = read-only access. "
+            "developer = read + write (updates notify super-admins). "
+            "super_admin = full control (set automatically for Steven/Ben)."
+        ),
+    )
     invited_by = models.ForeignKey(
         "self",
         null=True,
@@ -51,6 +67,8 @@ class AdminUser(AbstractBaseUser, PermissionsMixin):
         on_delete=models.SET_NULL,
         related_name="invited_admins",
     )
+    password_changed_at = models.DateTimeField(null=True, blank=True)
+    must_change_password = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
 
     USERNAME_FIELD = "email"
@@ -70,6 +88,25 @@ class AdminUser(AbstractBaseUser, PermissionsMixin):
     def is_super_admin(self):
         allow = {e.lower() for e in getattr(settings, "SUPERADMIN_EMAILS", [])}
         return bool(self.is_platform_super_admin and self.email.lower() in allow)
+
+    @property
+    def can_write(self):
+        """Developers and super admins can make changes."""
+        return self.role in ("developer", "super_admin") or self.is_super_admin
+
+    @property
+    def is_guest(self):
+        return self.role == "guest" and not self.is_super_admin
+
+    @property
+    def is_developer(self):
+        return self.role == "developer" and not self.is_super_admin
+
+    @property
+    def role_display(self):
+        if self.is_super_admin:
+            return "Super Admin"
+        return dict(ROLE_CHOICES).get(self.role, self.role)
 
 
 class AdminInvite(models.Model):
@@ -214,6 +251,14 @@ class AIAccountReview(models.Model):
     openai_raw = models.JSONField(default=dict, blank=True)
     ai_model = models.CharField(max_length=80, blank=True)
     error = models.TextField(blank=True)
+    # Manual override fields
+    manually_overridden = models.BooleanField(default=False)
+    overridden_by = models.ForeignKey(
+        AdminUser, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name="manual_overrides",
+    )
+    override_reason = models.TextField(blank=True)
+    original_decision = models.CharField(max_length=20, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     decided_at = models.DateTimeField(null=True, blank=True)
 
@@ -241,6 +286,18 @@ class AIAccountReview(models.Model):
             "pending": "muted",
             "error": "danger",
         }.get(self.decision, "muted")
+
+    @property
+    def confidence_percent(self):
+        return int(self.confidence * 100)
+
+    @property
+    def confidence_level(self):
+        if self.confidence >= 0.8:
+            return "high"
+        if self.confidence >= 0.5:
+            return "medium"
+        return "low"
 
 
 class AIFlag(models.Model):
@@ -274,6 +331,7 @@ class DailyReport(models.Model):
     pending_count = models.PositiveIntegerField(default=0)
     breeder_count = models.PositiveIntegerField(default=0)
     consultant_count = models.PositiveIntegerField(default=0)
+    manual_override_count = models.PositiveIntegerField(default=0)
     summary = models.TextField(blank=True)
     details = models.JSONField(default=dict, blank=True)
     delivered_email = models.BooleanField(default=False)
@@ -299,6 +357,7 @@ class AdminAuditLog(models.Model):
     target_type = models.CharField(max_length=32, blank=True)
     target_id = models.CharField(max_length=64, blank=True)
     details = models.JSONField(default=dict, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
