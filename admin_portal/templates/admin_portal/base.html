@@ -1,0 +1,39 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ APP_NAME }}{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'admin_portal/styles.css' %}">
+</head>
+<body>
+  <div class="wrapper">
+    <aside class="sidebar">
+      <div class="brand">{{ APP_NAME }}</div>
+      <div class="tagline">{{ APP_TAGLINE }}</div>
+      <nav class="nav">
+        <a href="{% url 'admin_portal:dashboard' %}">Dashboard</a>
+        <a href="{% url 'admin_portal:review_list' %}">AI Reviews</a>
+        <a href="{% url 'admin_portal:flag_list' %}">Flags</a>
+        <a href="{% url 'admin_portal:daily_report_list' %}">Daily Reports</a>
+        {% if IS_SUPER_ADMIN %}
+        <a href="{% url 'admin_portal:admin_user_list' %}">Team Access</a>
+        {% endif %}
+        <a href="{% url 'admin_portal:logout' %}">Logout</a>
+      </nav>
+      <p class="muted">Super Admins:<br>{{ SUPERADMIN_EMAILS|join:', ' }}</p>
+    </aside>
+    <main class="content">
+      {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>
