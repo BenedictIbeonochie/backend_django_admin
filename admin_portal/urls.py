@@ -13,6 +13,7 @@ urlpatterns = [
     path("reviews/", views.review_list, name="review_list"),
     path("reviews/<uuid:review_id>/", views.review_detail, name="review_detail"),
     path("reviews/<uuid:review_id>/re-run/", views.review_rerun, name="review_rerun"),
+    path("reviews/process-now/", views.process_now, name="process_now"),
 
     # Flags
     path("flags/", views.flag_list, name="flag_list"),

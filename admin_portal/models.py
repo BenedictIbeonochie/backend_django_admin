@@ -1,9 +1,9 @@
 """Control-plane data model.
 
-There are two kinds of tables in here:
+Two kinds of tables live here:
 
 1. `admin_portal_*` — local, managed tables (AdminUser, AdminInvite, AIAccountReview,
-   AIFlag, DailyReport, AdminAuditLog). These are created and owned by this project.
+   AIFlag, DailyReport, AdminAuditLog). Owned by this project.
 2. Unmanaged mirrors of the main backend's tables (`user_auth_user`,
    `consultant_consultantprofile`, `breeders_breederprofile`). The `managed = False`
    flag guarantees migrations here will never touch the main backend's schema.
@@ -114,6 +114,11 @@ class ExternalUser(models.Model):
     is_verified = models.BooleanField(default=False)
     verified_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    profile_picture = models.CharField(max_length=255, blank=True, null=True)
+    verification_documents = models.JSONField(default=list, blank=True)
+    current_trust_score = models.FloatField(null=True, blank=True)
+    current_regulatory_tier = models.CharField(max_length=32, blank=True, null=True)
+    is_at_risk = models.BooleanField(default=False)
     date_joined = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(null=True, blank=True)
 
@@ -141,9 +146,11 @@ class ExternalConsultantProfile(models.Model):
     business_phone = models.CharField(max_length=20, blank=True, null=True)
     business_address = models.TextField(blank=True, null=True)
     verification_level = models.CharField(max_length=20, blank=True, default="none")
+    credentials = models.JSONField(default=list, blank=True)
+    specializations = models.JSONField(default=list, blank=True)
+    services_list = models.JSONField(default=list, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(null=True, blank=True)
-    updated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         managed = False
@@ -167,6 +174,15 @@ class ExternalBreederProfile(models.Model):
     website = models.CharField(max_length=255, blank=True, null=True)
     business_phone = models.CharField(max_length=20, blank=True, null=True)
     business_address = models.TextField(blank=True, null=True)
+    has_certified_lineage = models.BooleanField(default=False)
+    lineage_documentation_count = models.IntegerField(default=0)
+    breeding_records_complete = models.BooleanField(default=False)
+    healthy_stock_rate = models.FloatField(null=True, blank=True)
+    stock_mortality_rate = models.FloatField(null=True, blank=True)
+    disease_reported_rate = models.FloatField(null=True, blank=True)
+    local_trust_score = models.FloatField(null=True, blank=True)
+    specializations = models.JSONField(default=list, blank=True)
+    service_area = models.CharField(max_length=255, blank=True, null=True)
     metadata = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(null=True, blank=True)
